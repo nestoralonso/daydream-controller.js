@@ -2,15 +2,18 @@
 <html lang="en">
 	<head>
 		<title>daydream-controller.js</title>
+		<style>
+			#textarea {
+				display: block;
+			}
+		</style>
 	</head>
 	<body>
 
 		<h1>daydream-controller.js</h1>
 		<button id="button">CONNECT</button><span id="message"></span><br /><br />
+		<canvas id="canvas" width="800", height="300"></canvas><br /><br />
 		<textarea id="textarea" rows="23" cols="50"></textarea>
-		<canvas id="canvas" width="400", height="300"></canvas><br /><br />
-		<a href="https://github.com/mrdoob/daydream-controller.js/">Source</a> -
-		<a href="https://vr.google.com/daydream/headset/">Daydream View</a>
 
 		<script src="files/three.min.js"></script>
 		<script src="files/MadgwickAHRS.js"></script>
