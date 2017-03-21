@@ -1,15 +1,15 @@
 'use strict';
 
-function createBullet(iniPos, iniDir) {
-  var geometry = new THREE.BoxGeometry(1, 1, 1);
+function createBullet(iniPos = { x: -3, y: 4, z: -10 }, iniDir = new THREE.Vector3(0, 0, 1)) {
+  var geometry = new THREE.BoxGeometry(0.2, 0.2, 0.2);
   var material = new THREE.MeshBasicMaterial({ color: 0xffcc00 });
   var daCube = new THREE.Mesh(geometry, material);
-  daCube.position.x = -3;
-  daCube.position.y = 4;
-  daCube.position.z = -10;
+  daCube.position.x = iniPos.x;
+  daCube.position.y = iniPos.y;
+  daCube.position.z = iniPos.z;
   scene.add(daCube);
 
-  var shape = new CANNON.Box(new CANNON.Vec3(1, 1, 1));
+  var shape = new CANNON.Box(new CANNON.Vec3(0.2, 0.2, 0.2));
   var mass = 1;
   var body = new CANNON.Body({
     mass
@@ -17,6 +17,11 @@ function createBullet(iniPos, iniDir) {
   body.position.x = daCube.position.x;
   body.position.y = daCube.position.y;
   body.position.z = daCube.position.z;
+
+  const targetVelocity =iniDir.multiplyScalar(3);
+  body.velocity.x = targetVelocity.x;
+  body.velocity.y = targetVelocity.y;
+  body.velocity.z = targetVelocity.z;
   body.addShape(shape);
   world.addBody(body);
 
@@ -24,6 +29,21 @@ function createBullet(iniPos, iniDir) {
     daCube,
     body
   ];
+}
+
+function getForwardVector(mesh) {
+  var matrix = new THREE.Matrix4();
+  matrix.extractRotation(mesh.matrix);
+
+  var direction = new THREE.Vector3(0, 0, 1);
+  return matrix.multiplyVector3(direction);
+}
+function getUpVector(mesh) {
+  var matrix = new THREE.Matrix4();
+  matrix.extractRotation(mesh.matrix);
+
+  var direction = new THREE.Vector3(0, 1, 0);
+  return matrix.multiplyVector3(direction);
 }
 
 if ('bluetooth' in navigator === false) {
@@ -50,7 +70,6 @@ button.addEventListener('click', function () {
     );
 
     if (mesh !== undefined) {
-
       mesh.quaternion.fromArray(sensorfusion.getQuaternion());
       mesh.rotation.x -= Math.PI / 2; // Hack: Don't know how to change rotate gyro/acc/ori.
 
@@ -62,12 +81,19 @@ button.addEventListener('click', function () {
       touch.position.y = - (state.yTouch * 2 - 1) / 1000;
 
       touch.visible = state.xTouch > 0 && state.yTouch > 0;
-
     }
 
+    if (state.isAppDown) {
+      gameObjects.push(createBullet(touch.position, getForwardVector(touch)));
+    }
   });
   controller.connect();
 
+});
+
+/**For debug purposes */
+document.addEventListener('click', (e) => {
+  gameObjects.push(createBullet({ x: 0, y: 1, z: -2 }, getUpVector(touch)));
 });
 
 var moveDelta = 0.01;
@@ -169,7 +195,7 @@ function updatePhysics() {
   world.step(timeStep);
   // Copy coordinates from Cannon.js to Three.js
   for (const go of gameObjects) {
-    const [ mesh, body ] = go;
+    const [mesh, body] = go;
     mesh.position.copy(body.position);
     mesh.quaternion.copy(body.quaternion);
   }
